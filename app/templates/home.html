@@ -1,0 +1,12 @@
+{% extends "new_base.html" %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <h1>Welcome to the Blockchain-based File Storage System</h1>
+    <p class="lead">Choose an option below to proceed:</p>
+    <div class="d-flex justify-content-center mt-4">
+        <a href="{{ url_for('upload') }}" class="btn btn-primary mx-3">Generate Synthetic Dataset</a>
+        <a href="{{ url_for('view_public_datasets') }}" class="btn btn-secondary mx-3">View Public Datasets</a>
+    </div>
+</div>
+{% endblock %}
