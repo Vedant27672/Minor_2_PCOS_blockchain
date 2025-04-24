@@ -2,6 +2,8 @@ import os
 import pickle
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend to avoid Tkinter errors
 import matplotlib.pyplot as plt
 import seaborn as sns
 from ctgan import CTGAN
@@ -13,6 +15,7 @@ import logging
 
 from app import model_mappings
 
+import time
 def generate_synthetic_data(decrypted_file_path, username, filename, output_dir="app/static/Uploads"):
     """Generate synthetic data from the decrypted file, using or training a CTGAN model mapped by username and filename."""
     data = pd.read_csv(decrypted_file_path)
@@ -48,6 +51,9 @@ def generate_synthetic_data(decrypted_file_path, username, filename, output_dir=
     data_scaled = data.copy()
     data_scaled[numeric_cols] = qt.fit_transform(data[numeric_cols])
 
+    # Add unique timestamp suffix for model and synthetic dataset filenames
+    timestamp = int(time.time())
+    
     # Check MongoDB for existing model mapping
     mapping = model_mappings.find_one({"username": username, "filename": filename})
     if mapping and "model_path" in mapping and os.path.exists(mapping["model_path"]):
@@ -68,10 +74,10 @@ def generate_synthetic_data(decrypted_file_path, username, filename, output_dir=
             ctgan.fit(data_scaled, discrete_columns=[target_col])
         else:
             ctgan.fit(data_scaled)
-        # Save model to unique path
+        # Save model to unique path with timestamp
         safe_username = "".join(c for c in username if c.isalnum() or c in (' ','.','_')).rstrip()
         safe_filename = "".join(c for c in os.path.splitext(filename)[0] if c.isalnum() or c in (' ','.','_')).rstrip()
-        model_path = os.path.join(output_dir, f"CTGAN_model_{safe_username}_{safe_filename}.pkl")
+        model_path = os.path.join(output_dir, f"CTGAN_model_{safe_username}_{safe_filename}_{timestamp}.pkl")
         with open(model_path, 'wb') as f:
             pickle.dump(ctgan, f)
         logging.info(f"✅ Model saved to {model_path}")
@@ -109,7 +115,7 @@ def generate_synthetic_data(decrypted_file_path, username, filename, output_dir=
 
     safe_username = "".join(c for c in username if c.isalnum() or c in (' ','.','_')).rstrip()
     safe_filename = "".join(c for c in os.path.splitext(filename)[0] if c.isalnum() or c in (' ','.','_')).rstrip()
-    save_path = os.path.join(output_dir, f"synthetic_{safe_username}_{safe_filename}.csv")
+    save_path = os.path.join(output_dir, f"synthetic_{safe_username}_{safe_filename}_{timestamp}.csv")
     synthetic_data.to_csv(save_path, index=False)
     logging.info(f"✅ Saved: {save_path}")
 
