@@ -53,7 +53,6 @@ def view_public_datasets():
         # Prepare data for template: extract filenames from paths and get uploader username
         for dataset in public_datasets:
             dataset['synthetic_filename'] = os.path.basename(dataset.get('synthetic_file_path', ''))
-            dataset['model_filename'] = os.path.basename(dataset.get('model_name', '')) if dataset.get('model_name') else ''
             dataset['uploader_username'] = dataset.get('uploader_username', 'Unknown')
     except Exception as e:
         app.logger.error(f"Failed to fetch public datasets: {e}")

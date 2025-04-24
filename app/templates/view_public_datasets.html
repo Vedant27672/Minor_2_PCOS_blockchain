@@ -9,7 +9,6 @@
             <thead>
                 <tr>
                     <th>Synthetic Dataset File</th>
-                    <th>Model Path</th>
                     <th>Uploader Username</th>
                     <th>Download Dataset</th>
                     <th>Download Model</th>
@@ -19,13 +18,16 @@
                 {% for dataset in public_datasets %}
                 <tr>
                     <td>{{ dataset.synthetic_filename }}</td>
-                    <td>{{ dataset.model_filename }}</td>
                     <td>{{ dataset.uploader_username }}</td>
                     <td>
-                        <a href="{{ url_for('download_synthetic', filepath=dataset.synthetic_filename) }}" class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Download Dataset</a>
+                        <a href="{{ url_for('download_synthetic', filepath=dataset.synthetic_filename) }}"
+                            class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Download
+                            Dataset</a>
                     </td>
                     <td>
-                        <a href="{{ url_for('download_synthetic', filepath=dataset.model_filename) }}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Download Model</a>
+                        <a href="{{ url_for('download_synthetic', filepath=dataset.model_filename) }}"
+                            class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Download
+                            Model</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -37,4 +39,3 @@
     {% endif %}
 </div>
 {% endblock %}
-
