@@ -223,20 +223,26 @@ def generate_dataset(filename):
     
     # Debug log synthetic_csv_path
     synthetic_csv_path = analysis_results.get('synthetic_csv_path')
-    app.logger.debug(f"synthetic_csv_path: {synthetic_csv_path}")
+    # Construct full path if only filename is present
+    if synthetic_csv_path and not os.path.isabs(synthetic_csv_path):
+        synthetic_csv_path = os.path.join(app.config['UPLOAD_FOLDER'], synthetic_csv_path)
+    app.logger.debug(f"synthetic_csv_path (full): {synthetic_csv_path}")
     
     flash('Synthetic dataset generated successfully!', 'success')
     # Render a new template to display analysis_results and synthetic_data_html
 
     # Insert or update synthetic dataset info into public_files collection using upsert
     try:
-        from app import public_files
+        from app import public_files, model_mappings
         app.logger.debug(f"Upserting document with path {synthetic_csv_path} into public_files")
         if synthetic_csv_path:
+            # Get model path from model_mappings collection
+            mapping = model_mappings.find_one({"username": current_user.username, "filename": filename})
+            model_path = mapping["model_path"] if mapping and "model_path" in mapping else "CTGAN"
             result = public_files.update_one(
                 {"synthetic_file_path": synthetic_csv_path},
                 {"$set": {
-                    "model_name": "CTGAN",  # Assuming CTGAN model is used; adjust if dynamic
+                    "model_name": model_path,
                     "uploader_username": current_user.username
                 }},
                 upsert=True
