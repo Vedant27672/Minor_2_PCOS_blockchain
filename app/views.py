@@ -228,26 +228,27 @@ def generate_dataset(filename):
     flash('Synthetic dataset generated successfully!', 'success')
     # Render a new template to display analysis_results and synthetic_data_html
 
-    # Insert synthetic dataset info into public_files collection
+    # Insert or update synthetic dataset info into public_files collection using upsert
     try:
-        from app import insert_public_file, public_files
-        app.logger.debug(f"Checking if document with path {synthetic_csv_path} exists in public_files")
+        from app import public_files
+        app.logger.debug(f"Upserting document with path {synthetic_csv_path} into public_files")
         if synthetic_csv_path:
-            existing_doc = public_files.find_one({"synthetic_file_path": synthetic_csv_path})
-            if not existing_doc:
-                app.logger.debug("No existing document found, attempting to insert new document.")
-                inserted_id = insert_public_file(
-                    synthetic_file_path=synthetic_csv_path,
-                    model_name="CTGAN",  # Assuming CTGAN model is used; adjust if dynamic
-                    uploader_username=current_user.username
-                )
-                app.logger.info(f"Inserted public file document with id: {inserted_id}")
+            result = public_files.update_one(
+                {"synthetic_file_path": synthetic_csv_path},
+                {"$set": {
+                    "model_name": "CTGAN",  # Assuming CTGAN model is used; adjust if dynamic
+                    "uploader_username": current_user.username
+                }},
+                upsert=True
+            )
+            if result.upserted_id:
+                app.logger.info(f"Inserted new public file document with id: {result.upserted_id}")
             else:
-                app.logger.info(f"Document with path {synthetic_csv_path} already exists. Skipping insertion.")
+                app.logger.info(f"Updated existing public file document with path: {synthetic_csv_path}")
         else:
-            app.logger.warning("Synthetic CSV path is None or empty, skipping insertion into public_files.")
+            app.logger.warning("Synthetic CSV path is None or empty, skipping upsert into public_files.")
     except Exception as e:
-        app.logger.error(f"Failed to insert public file document: {e}")
+        app.logger.error(f"Failed to upsert public file document: {e}")
 
     return render_template("analysis_results.html", analysis=analysis_results, filename=filename, synthetic_data_html=synthetic_data_html, synthetic_csv_path=synthetic_csv_path)
     
