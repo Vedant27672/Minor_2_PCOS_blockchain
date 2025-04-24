@@ -2,11 +2,29 @@ import json
 import os
 import requests
 from flask import render_template, redirect, request, send_file, flash, url_for
-from app import app
+from app import app, public_files
 
 @app.route('/home')
 def home():
     return render_template('home.html')
+
+def insert_public_file(synthetic_file_path, model_name, uploader_username):
+    """
+    Insert a document into the public_files collection.
+    :param synthetic_file_path: str - full path of the synthetic dataset file
+    :param model_name: str - name of the corresponding model
+    :param uploader_username: str - username of the uploader
+    """
+    doc = {
+        "synthetic_file_path": synthetic_file_path,
+        "model_name": model_name,
+        "uploader_username": uploader_username
+    }
+    app.logger.debug(f"Inserting document into public_files: {doc}")
+    result = public_files.insert_one(doc)
+    app.logger.debug(f"Document inserted with id: {result.inserted_id}")
+    return result.inserted_id
+
 #comment
 @app.route('/upload')
 def upload():
@@ -209,6 +227,28 @@ def generate_dataset(filename):
     
     flash('Synthetic dataset generated successfully!', 'success')
     # Render a new template to display analysis_results and synthetic_data_html
+
+    # Insert synthetic dataset info into public_files collection
+    try:
+        from app import insert_public_file, public_files
+        app.logger.debug(f"Checking if document with path {synthetic_csv_path} exists in public_files")
+        if synthetic_csv_path:
+            existing_doc = public_files.find_one({"synthetic_file_path": synthetic_csv_path})
+            if not existing_doc:
+                app.logger.debug("No existing document found, attempting to insert new document.")
+                inserted_id = insert_public_file(
+                    synthetic_file_path=synthetic_csv_path,
+                    model_name="CTGAN",  # Assuming CTGAN model is used; adjust if dynamic
+                    uploader_username=current_user.username
+                )
+                app.logger.info(f"Inserted public file document with id: {inserted_id}")
+            else:
+                app.logger.info(f"Document with path {synthetic_csv_path} already exists. Skipping insertion.")
+        else:
+            app.logger.warning("Synthetic CSV path is None or empty, skipping insertion into public_files.")
+    except Exception as e:
+        app.logger.error(f"Failed to insert public file document: {e}")
+
     return render_template("analysis_results.html", analysis=analysis_results, filename=filename, synthetic_data_html=synthetic_data_html, synthetic_csv_path=synthetic_csv_path)
     
 @app.route("/download_synthetic/<path:filepath>")

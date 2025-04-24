@@ -20,4 +20,6 @@ users = db.users
 
 model_mappings = db.model_mappings
 
+public_files = db.public_files
+
 from app import views
