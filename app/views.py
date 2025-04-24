@@ -2,6 +2,7 @@ import json
 import os
 import requests
 from flask import render_template, redirect, request, send_file, flash, url_for
+from flask_login import login_user, logout_user, current_user, login_required
 from app import app, public_files
 
 @app.route('/home')
@@ -43,8 +44,21 @@ def upload():
                          request_tx=filtered_tx)
 
 @app.route('/view_public_datasets')
+@login_required
 def view_public_datasets():
-    return render_template('view_public_datasets.html')
+    try:
+        from app import public_files
+        # Query all documents from public_files collection
+        public_datasets = list(public_files.find({}))
+        # Prepare data for template: extract filenames from paths and get uploader username
+        for dataset in public_datasets:
+            dataset['synthetic_filename'] = os.path.basename(dataset.get('synthetic_file_path', ''))
+            dataset['model_filename'] = os.path.basename(dataset.get('model_name', '')) if dataset.get('model_name') else ''
+            dataset['uploader_username'] = dataset.get('uploader_username', 'Unknown')
+    except Exception as e:
+        app.logger.error(f"Failed to fetch public datasets: {e}")
+        public_datasets = []
+    return render_template('view_public_datasets.html', public_datasets=public_datasets)
 from app import file_encryptor
 from werkzeug.utils import secure_filename
 from flask_login import login_user, logout_user, current_user, login_required
