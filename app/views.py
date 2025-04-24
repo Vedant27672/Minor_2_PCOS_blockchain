@@ -59,7 +59,7 @@ def view_public_datasets():
     except Exception as e:
         app.logger.error(f"Failed to fetch public datasets: {e}")
         public_datasets = []
-    return render_template('view_public_datasets.html', public_datasets=public_datasets)
+    return render_template('view_public_datasets_with_analyze.html', public_datasets=public_datasets)
 
 @app.route('/analyze_dataset/<path:filename>')
 @login_required

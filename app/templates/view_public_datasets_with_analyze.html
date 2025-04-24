@@ -1,0 +1,57 @@
+{% extends "analysis_base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Public Datasets</h2>
+    {% if public_datasets %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Synthetic Dataset File</th>
+                    <th>Uploader Username</th>
+                    <th>Download Dataset</th>
+                    <th>Download Model</th>
+                    <th>Analyze</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dataset in public_datasets %}
+                <tr>
+                    <td>{{ dataset.synthetic_filename }}</td>
+                    <td>{{ dataset.uploader_username }}</td>
+                    <td>
+                        <a href="{{ url_for('download_synthetic', filepath=dataset.synthetic_filename) }}"
+                            class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Download
+                            Dataset</a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('download_synthetic', filepath=dataset.model_filename) }}"
+                            class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Download
+                            Model</a>
+                    </td>
+                    <td>
+                        {# Extract original filename from synthetic filename #}
+                        {% set original_filename = dataset.synthetic_filename %}
+                        {% if original_filename.startswith('synthetic_') %}
+                            {% set parts = original_filename.split('_') %}
+                            {% if parts|length > 3 %}
+                                {% set original_filename = parts[2] + '_' + parts[3] %}
+                                {% if parts|length > 4 %}
+                                    {% set original_filename = original_filename + '.csv' %}
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                        <a href="{{ url_for('generate_dataset', filename=original_filename) }}"
+                            class="btn btn-info btn-sm">Analyze</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No public datasets available.</p>
+    {% endif %}
+</div>
+{% endblock %}

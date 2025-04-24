@@ -120,7 +120,7 @@ def generate_synthetic_data(decrypted_file_path, username, filename, output_dir=
     logging.info(f"✅ Saved: {save_path}")
 
     from app.gan import compare_datasets
-    analysis_results = compare_datasets(data_rounded, synthetic_data, numeric_cols, special_cols, username, filename, output_dir)
+    analysis_results = compare_datasets(data_rounded, synthetic_data, numeric_cols, special_cols, username, filename, output_dir, timestamp)
 
     # Add synthetic_csv_path key with relative filename for template use
     relative_path = os.path.relpath(save_path, start="app/static/Uploads").replace("\\", "/")
@@ -128,7 +128,7 @@ def generate_synthetic_data(decrypted_file_path, username, filename, output_dir=
 
     return synthetic_data, analysis_results
 
-def compare_datasets(original, synthetic, numeric_cols, special_cols, username=None, filename=None, output_dir="app/static/Uploads"):
+def compare_datasets(original, synthetic, numeric_cols, special_cols, username=None, filename=None, output_dir="app/static/Uploads", timestamp=None):
     logging.info("🔍 Evaluating synthetic data quality...\n")
     print(f"✅ Original shape: {original.shape}, Synthetic shape: {synthetic.shape}")
 
@@ -157,7 +157,7 @@ def compare_datasets(original, synthetic, numeric_cols, special_cols, username=N
     # Create output directory for plots
     safe_username = "".join(c for c in username if c.isalnum() or c in (' ','.','_')).rstrip()
     safe_filename = "".join(c for c in os.path.splitext(filename)[0] if c.isalnum() or c in (' ','.','_')).rstrip()
-    plot_dir = os.path.join(output_dir, f"{safe_username}_{safe_filename}")
+    plot_dir = os.path.join(output_dir, f"{safe_username}_{safe_filename}_{timestamp}")
     os.makedirs(plot_dir, exist_ok=True)
 
     plot_paths = []
