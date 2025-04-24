@@ -4,6 +4,8 @@ import requests
 from flask import render_template, redirect, request, send_file, flash, url_for
 from flask_login import login_user, logout_user, current_user, login_required
 from app import app, public_files
+import os
+import traceback
 
 @app.route('/home')
 def home():
@@ -58,6 +60,40 @@ def view_public_datasets():
         app.logger.error(f"Failed to fetch public datasets: {e}")
         public_datasets = []
     return render_template('view_public_datasets.html', public_datasets=public_datasets)
+
+@app.route('/analyze_dataset/<path:filename>')
+@login_required
+def analyze_dataset(filename):
+    """
+    Route to display analysis results for an existing synthetic dataset file.
+    """
+    try:
+        synthetic_file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if not os.path.isfile(synthetic_file_path):
+            flash('Synthetic dataset file not found.', 'danger')
+            return redirect(url_for('view_public_datasets'))
+        
+        # Assuming analysis results are stored or can be generated from the synthetic file
+        # For simplicity, we will load the synthetic data and render analysis_results.html
+        import pandas as pd
+        synthetic_data = pd.read_csv(synthetic_file_path)
+        
+        # Generate analysis results (dummy or minimal for now)
+        analysis_results = {
+            'synthetic_csv_path': filename,
+            'num_rows': len(synthetic_data),
+            'num_columns': len(synthetic_data.columns),
+            # Add more analysis details as needed
+        }
+        
+        synthetic_data_html = synthetic_data.to_html(classes="table table-striped", index=False)
+        
+        return render_template("analysis_results.html", analysis=analysis_results, filename=filename, synthetic_data_html=synthetic_data_html)
+    except Exception as e:
+        app.logger.error(f"Error displaying analysis results: {str(e)}")
+        app.logger.error(traceback.format_exc())
+        flash('An error occurred while displaying the analysis results.', 'danger')
+        return redirect(url_for('view_public_datasets'))
 from app import file_encryptor
 from werkzeug.utils import secure_filename
 from flask_login import login_user, logout_user, current_user, login_required

@@ -12,6 +12,7 @@
                     <th>Uploader Username</th>
                     <th>Download Dataset</th>
                     <th>Download Model</th>
+                    <th>Analyze</th>
                 </tr>
             </thead>
             <tbody>
@@ -28,6 +29,10 @@
                         <a href="{{ url_for('download_synthetic', filepath=dataset.model_filename) }}"
                             class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Download
                             Model</a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('download_synthetic', filepath=dataset.model_filename) }}"
+                            class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Analyze</a>
                     </td>
                 </tr>
                 {% endfor %}
