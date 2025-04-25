@@ -52,10 +52,11 @@ def view_public_datasets():
         from app import public_files
         # Query all documents from public_files collection
         public_datasets = list(public_files.find({}))
-        # Prepare data for template: extract filenames from paths and get uploader username
+        # Prepare data for template: extract filenames from paths and get uploader username and model filename
         for dataset in public_datasets:
             dataset['synthetic_filename'] = os.path.basename(dataset.get('synthetic_file_path', ''))
             dataset['uploader_username'] = dataset.get('uploader_username', 'Unknown')
+            dataset['model_filename'] = os.path.basename(dataset.get('model_name', ''))
     except Exception as e:
         app.logger.error(f"Failed to fetch public datasets: {e}")
         public_datasets = []
