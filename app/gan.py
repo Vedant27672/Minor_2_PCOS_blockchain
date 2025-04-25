@@ -64,7 +64,7 @@ def generate_synthetic_data(decrypted_file_path, username, filename, output_dir=
     else:
         logging.info(f"🚀 Training new CTGAN model for user {username} and file {filename}...")
         ctgan = CTGAN(
-            epochs=200,
+            epochs=100,
             verbose=True,
             generator_lr=2e-4,
             discriminator_lr=1e-4,
