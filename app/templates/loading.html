@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Loading...</title>
+<style>
+  /* Full screen overlay */
+  #loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Spinner */
+  .spinner {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <script>
+    // Show loading overlay on form submit or button click
+    document.addEventListener('DOMContentLoaded', function() {
+      var loadingOverlay = document.getElementById('loading-overlay');
+      var forms = document.querySelectorAll('form');
+      forms.forEach(function(form) {
+        form.addEventListener('submit', function() {
+          loadingOverlay.style.display = 'flex';
+        });
+      });
+      var buttons = document.querySelectorAll('button.loading-trigger');
+      buttons.forEach(function(button) {
+        button.addEventListener('click', function() {
+          loadingOverlay.style.display = 'flex';
+        });
+      });
+    });
+  </script>
+</body>
+</html>
