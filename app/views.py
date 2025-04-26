@@ -386,7 +386,10 @@ def submit():
         base_filename = os.path.splitext(filename)[0]
         
         # Save directly to encrypted file
-        enc_file_path = os.path.join("app/static/Uploads/", f"{base_filename}.enc")
+        enc_dir = os.path.join("app/static/Uploads/")
+        if not os.path.exists(enc_dir):
+            os.makedirs(enc_dir, exist_ok=True)
+        enc_file_path = os.path.join(enc_dir, f"{base_filename}.enc")
         up_file.save(enc_file_path)  # Save original content temporarily
         
         # Get file size before encryption
