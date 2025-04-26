@@ -348,50 +348,68 @@ def index():
 @app.route("/submit", methods=["POST"])
 # When new transaction is created it is processed and added to transaction
 def submit():
-    start = timer()
-    user = request.form["user"]
-    up_file = request.files["v_file"]
-    
-    # Get base filename without extension
-    base_filename = os.path.splitext(secure_filename(up_file.filename))[0]
-    
-    # Save directly to encrypted file
-    enc_file_path = os.path.join("app/static/Uploads/", f"{base_filename}.enc")
-    up_file.save(enc_file_path)  # Save original content temporarily
-    
-    # Get file size before encryption
-    file_states = os.stat(enc_file_path).st_size
-    
-    # Encrypt the file in-place
-    password = current_user.password if current_user.is_authenticated else "anonymous"
-    file_encryptor.encrypt_file(enc_file_path, enc_file_path, password)
-    
-    # Store path to encrypted file
-    files[up_file.filename] = enc_file_path
-    
-    # Read and encode encrypted file data as base64
-    with open(files[up_file.filename], 'rb') as f:
-        import base64
-        file_data = base64.b64encode(f.read()).decode('utf-8')
-    
-    # Create transaction object
-    post_object = {
-        "user": user,
-        "v_file": up_file.filename,
-        "file_data": file_data,  # Now base64 encoded string
-        "file_size": file_states,
-        "owner": current_user.username if current_user.is_authenticated else "anonymous"
-    }
-   
-    # Submit a new transaction
-    address = "{0}/new_transaction".format(ADDR)
-    requests.post(address, json=post_object)
-    end = timer()
-    print(end - start)
-    return redirect("/upload")
+    try:
+        start = timer()
+        user = request.form.get("user")
+        up_file = request.files.get("v_file")
+
+        if not up_file or up_file.filename == '':
+            flash('No file selected for uploading', 'danger')
+            return redirect("/upload")
+
+        # Validate file extension
+        allowed_extensions = {'.csv'}
+        filename = secure_filename(up_file.filename)
+        file_ext = os.path.splitext(filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            flash('Invalid file type. Only .csv files are allowed.', 'danger')
+            return redirect("/upload")
+        
+        # Get base filename without extension
+        base_filename = os.path.splitext(filename)[0]
+        
+        # Save directly to encrypted file
+        enc_file_path = os.path.join("app/static/Uploads/", f"{base_filename}.enc")
+        up_file.save(enc_file_path)  # Save original content temporarily
+        
+        # Get file size before encryption
+        file_states = os.stat(enc_file_path).st_size
+        
+        # Encrypt the file in-place
+        password = current_user.password if current_user.is_authenticated else "anonymous"
+        file_encryptor.encrypt_file(enc_file_path, enc_file_path, password)
+        
+        # Store path to encrypted file
+        files[up_file.filename] = enc_file_path
+        
+        # Read and encode encrypted file data as base64
+        with open(files[up_file.filename], 'rb') as f:
+            import base64
+            file_data = base64.b64encode(f.read()).decode('utf-8')
+        
+        # Create transaction object
+        post_object = {
+            "user": user,
+            "v_file": up_file.filename,
+            "file_data": file_data,  # Now base64 encoded string
+            "file_size": file_states,
+            "owner": current_user.username if current_user.is_authenticated else "anonymous"
+        }
+       
+        # Submit a new transaction
+        address = "{0}/new_transaction".format(ADDR)
+        requests.post(address, json=post_object)
+        end = timer()
+        print(end - start)
+        return redirect("/upload")
+    except Exception as e:
+        app.logger.error(f"Error in submit: {str(e)}")
+        app.logger.error(traceback.format_exc())
+        flash('An error occurred during file upload. Please try again.', 'danger')
+        return redirect("/upload")
 
 #creates a download link for the file
-@app.route("/submit/<string:variable>",methods = ["GET"])
+@app.route("/submit/<string:variable>", methods=["GET"])
 @login_required
 def download_file(variable):
     # Get file info from blockchain
