@@ -399,6 +399,15 @@ def submit():
         # Submit a new transaction
         address = "{0}/new_transaction".format(ADDR)
         requests.post(address, json=post_object)
+
+        # Automatically request mining after submitting transaction
+        mine_address = "{0}/mine".format(ADDR)
+        try:
+            mine_response = requests.get(mine_address)
+            app.logger.info(f"Mining response: {mine_response.text}")
+        except Exception as e:
+            app.logger.error(f"Error requesting mining: {str(e)}")
+
         end = timer()
         print(end - start)
         return redirect("/upload")
