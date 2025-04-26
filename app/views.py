@@ -29,7 +29,10 @@ def insert_public_file(synthetic_file_path, model_name, uploader_username):
     return result.inserted_id
 
 #comment
+from flask_login import login_required
+
 @app.route('/upload')
+@login_required
 def upload():
     get_tx_req()
     # Show anonymous files to all, private files only to owner/master
@@ -46,7 +49,6 @@ def upload():
                          request_tx=filtered_tx)
 
 @app.route('/view_public_datasets')
-@login_required
 def view_public_datasets():
     try:
         from app import public_files
