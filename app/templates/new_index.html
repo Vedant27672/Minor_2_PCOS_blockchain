@@ -11,8 +11,8 @@
                 <div class="card-body">
                     <form action="/submit" method="POST" enctype="multipart/form-data">
                         <div class="mb-3">
-                            <label class="form-label">Your Name</label>
-                            <input type="text" class="form-control" name="user" placeholder="Enter your name" required>
+                            <label class="form-label">Username</label>
+                            <p class="form-control-plaintext"><strong>{{ current_user.username }}</strong></p>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Select File</label>
@@ -42,10 +42,6 @@
                                     <small class="text-muted">Uploaded by {{ post.user }}</small>
                                 </div>
                                 <div>
-                                    <a href="{{url_for('download_file',variable = post.v_file)}}"
-                                        class="btn btn-sm btn-outline-primary me-2">
-                                        <i class="bi bi-download"></i> Download
-                                    </a>
                                     <a href="{{url_for('view_block', block_index=post.index, filename=post.v_file)}}"
                                         class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-eye"></i> View Block

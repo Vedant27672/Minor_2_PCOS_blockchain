@@ -256,60 +256,70 @@ def get_tx_req():
 # Loads and runs the home page
 import traceback
 
+import tempfile
+import os
+
 @app.route("/generate_dataset/<filename>", methods=["POST"])
 @login_required
 def generate_dataset(filename):
     """Generate a synthetic dataset from the uploaded file."""
     try:
-        # Decrypt the file
+        # Decrypt the file to a temporary file using mkstemp to avoid Windows permission issues
         enc_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{os.path.splitext(filename)[0]}.enc")  # Correct reference
-        decrypted_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{os.path.splitext(filename)[0]}.csv")
         password = current_user.password if current_user.is_authenticated else "anonymous"
-        
-        # Decrypt the file
-        file_encryptor.decrypt_file(enc_file_path, decrypted_file_path, password)
-        
-        # Call gan.py to generate the dataset and capture the returned synthetic_data and analysis_results
-        from app import gan
-        synthetic_data, analysis_results = gan.generate_synthetic_data(decrypted_file_path, current_user.username, filename, output_dir=app.config['UPLOAD_FOLDER'])  # Pass username and filename
-        
-        # Convert synthetic_data DataFrame to HTML for display
-        synthetic_data_html = synthetic_data.to_html(classes="table table-striped", index=False)
-        
-        # Debug log synthetic_csv_path
-        synthetic_csv_path = analysis_results.get('synthetic_csv_path')
-        # Construct full path if only filename is present
-        if synthetic_csv_path and not os.path.isabs(synthetic_csv_path):
-            synthetic_csv_path = os.path.join(app.config['UPLOAD_FOLDER'], synthetic_csv_path)
-        app.logger.debug(f"synthetic_csv_path (full): {synthetic_csv_path}")
-        
-        flash('Synthetic dataset generated successfully!', 'success')
-        # Insert or update synthetic dataset info into public_files collection using upsert
-        try:
-            from app import public_files, model_mappings
-            app.logger.debug(f"Upserting document with path {synthetic_csv_path} into public_files")
-            if synthetic_csv_path:
-                # Get model path from model_mappings collection
-                mapping = model_mappings.find_one({"username": current_user.username, "filename": filename})
-                model_path = mapping["model_path"] if mapping and "model_path" in mapping else "CTGAN"
-                result = public_files.update_one(
-                    {"synthetic_file_path": synthetic_csv_path},
-                    {"$set": {
-                        "model_name": model_path,
-                        "uploader_username": current_user.username
-                    }},
-                    upsert=True
-                )
-                if result.upserted_id:
-                    app.logger.info(f"Inserted new public file document with id: {result.upserted_id}")
-                else:
-                    app.logger.info(f"Updated existing public file document with path: {synthetic_csv_path}")
-            else:
-                app.logger.warning("Synthetic CSV path is None or empty, skipping upsert into public_files.")
-        except Exception as e:
-            app.logger.error(f"Failed to upsert public file document: {e}")
 
-        return render_template("analysis_results.html", analysis=analysis_results, filename=filename, synthetic_data_html=synthetic_data_html, synthetic_csv_path=synthetic_csv_path)
+        fd, decrypted_file_path = tempfile.mkstemp(suffix=".csv")
+        os.close(fd)  # Close the file descriptor immediately
+
+        try:
+            file_encryptor.decrypt_file(enc_file_path, decrypted_file_path, password)
+
+            # Call gan.py to generate the dataset and capture the returned synthetic_data and analysis_results
+            from app import gan
+            synthetic_data, analysis_results = gan.generate_synthetic_data(decrypted_file_path, current_user.username, filename, output_dir=app.config['UPLOAD_FOLDER'])  # Pass username and filename
+
+            # Convert synthetic_data DataFrame to HTML for display
+            synthetic_data_html = synthetic_data.to_html(classes="table table-striped", index=False)
+
+            # Debug log synthetic_csv_path
+            synthetic_csv_path = analysis_results.get('synthetic_csv_path')
+            # Construct full path if only filename is present
+            if synthetic_csv_path and not os.path.isabs(synthetic_csv_path):
+                synthetic_csv_path = os.path.join(app.config['UPLOAD_FOLDER'], synthetic_csv_path)
+            app.logger.debug(f"synthetic_csv_path (full): {synthetic_csv_path}")
+
+            flash('Synthetic dataset generated successfully!', 'success')
+            # Insert or update synthetic dataset info into public_files collection using upsert
+            try:
+                from app import public_files, model_mappings
+                app.logger.debug(f"Upserting document with path {synthetic_csv_path} into public_files")
+                if synthetic_csv_path:
+                    # Get model path from model_mappings collection
+                    mapping = model_mappings.find_one({"username": current_user.username, "filename": filename})
+                    model_path = mapping["model_path"] if mapping and "model_path" in mapping else "CTGAN"
+                    result = public_files.update_one(
+                        {"synthetic_file_path": synthetic_csv_path},
+                        {"$set": {
+                            "model_name": model_path,
+                            "uploader_username": current_user.username
+                        }},
+                        upsert=True
+                    )
+                    if result.upserted_id:
+                        app.logger.info(f"Inserted new public file document with id: {result.upserted_id}")
+                    else:
+                        app.logger.info(f"Updated existing public file document with path: {synthetic_csv_path}")
+                else:
+                    app.logger.warning("Synthetic CSV path is None or empty, skipping upsert into public_files.")
+            except Exception as e:
+                app.logger.error(f"Failed to upsert public file document: {e}")
+
+            return render_template("analysis_results.html", analysis=analysis_results, filename=filename, synthetic_data_html=synthetic_data_html, synthetic_csv_path=synthetic_csv_path)
+        finally:
+            # Delete the temporary decrypted file
+            if os.path.exists(decrypted_file_path):
+                os.remove(decrypted_file_path)
+
     except Exception as e:
         app.logger.error(f"Error generating synthetic dataset: {str(e)}")
         app.logger.error(traceback.format_exc())
@@ -350,7 +360,7 @@ def index():
 def submit():
     try:
         start = timer()
-        user = request.form.get("user")
+        user = current_user.username if current_user.is_authenticated else "anonymous"
         up_file = request.files.get("v_file")
 
         if not up_file or up_file.filename == '':
