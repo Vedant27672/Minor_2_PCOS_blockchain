@@ -19,15 +19,20 @@
             {% for dataset in datasets %}
                 {% set file_name = None %}
                 {% if dataset.synthetic_filename.startswith('synthetic_') %}
-                    {% set name = dataset.synthetic_filename[9:] %} {# Remove 'synthetic_' prefix #}
-                    {% set last_underscore = name.rfind('_') %}
-                    {% if last_underscore != -1 %}
-                    {% set file_name = name[:last_underscore] %}
-                    {% if file_name.startswith('_') %}
-                        {% set file_name = file_name[1:] %}
-                    {% endif %}
+                    {% set prefix = 'synthetic_' + dataset.uploader_username + '_' %}
+                    {% if dataset.synthetic_filename.startswith(prefix) %}
+                        {% set name = dataset.synthetic_filename[prefix|length:] %}
+                        {% set last_underscore = name.rfind('_') %}
+                        {% if last_underscore != -1 %}
+                            {% set file_name = name[:last_underscore] %}
+                            {% if file_name.startswith('_') %}
+                                {% set file_name = file_name[1:] %}
+                            {% endif %}
+                        {% else %}
+                            {% set file_name = name %}
+                        {% endif %}
                     {% else %}
-                        {% set file_name = name %}
+                        {% set file_name = dataset.synthetic_filename %}
                     {% endif %}
                 {% endif %}
                 {% if file_name %}
@@ -38,7 +43,7 @@
             {% endfor %}
             {% for file_name, file_datasets in datasets_by_file.items() %}
                 <h4 class="mt-4 mb-3 d-flex align-items-center justify-content-between">
-                    <span>{{ file_name }}</span>
+                    <span class="text-muted" style="font-size: 0.9rem;">{{ file_name }}</span>
                     {% set model_filename = file_datasets[0].model_filename %}
                     <a href="{{ url_for('download_synthetic', filepath=model_filename) }}"
                         class="btn btn-outline-secondary btn-sm" target="_blank" rel="noopener noreferrer">Download Model</a>
