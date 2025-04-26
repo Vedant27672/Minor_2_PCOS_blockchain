@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h2 class="text-center">Public Datasets</h2>
+    <h2 class="text-center mb-4">Public Datasets</h2>
     {% if public_datasets %}
         {% set datasets_by_user = {} %}
         {% for dataset in public_datasets %}
@@ -14,54 +14,82 @@
         {% endfor %}
 
         {% for username, datasets in datasets_by_user.items() %}
-            <h3>{{ username }}</h3>
-            <div class="table-responsive mb-4">
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>Synthetic Dataset File</th>
-                            <th>Download Dataset</th>
-                            <th>Download Model</th>
-                            <th>Analyze</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for dataset in datasets %}
-                        <tr>
-                            <td>{{ dataset.synthetic_filename }}</td>
-                            <td>
-                                <a href="{{ url_for('download_synthetic', filepath=dataset.synthetic_filename) }}"
-                                    class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Download
-                                    Dataset</a>
-                            </td>
-                            <td>
-                                <a href="{{ url_for('download_synthetic', filepath=dataset.model_filename) }}"
-                                    class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Download
-                                    Model</a>
-                            </td>
-                            <td>
-                                {# Extract original filename from synthetic filename #}
-                                {% set original_filename = dataset.synthetic_filename %}
-                                {% if original_filename.startswith('synthetic_') %}
-                                    {% set parts = original_filename.split('_') %}
-                                    {% if parts|length > 3 %}
-                                        {% set original_filename = parts[2] + '_' + parts[3] %}
+            <h3 class="mb-3">{{ username }}</h3>
+            {% set datasets_by_file = {} %}
+            {% for dataset in datasets %}
+                {% set file_name = None %}
+                {% if dataset.synthetic_filename.startswith('synthetic_') %}
+                    {% set name = dataset.synthetic_filename[9:] %} {# Remove 'synthetic_' prefix #}
+                    {% set last_underscore = name.rfind('_') %}
+                    {% if last_underscore != -1 %}
+                    {% set file_name = name[:last_underscore] %}
+                    {% if file_name.startswith('_') %}
+                        {% set file_name = file_name[1:] %}
+                    {% endif %}
+                    {% else %}
+                        {% set file_name = name %}
+                    {% endif %}
+                {% endif %}
+                {% if file_name %}
+                    {% set _ = datasets_by_file.setdefault(file_name, []).append(dataset) %}
+                {% else %}
+                    {% set _ = datasets_by_file.setdefault('Unknown', []).append(dataset) %}
+                {% endif %}
+            {% endfor %}
+            {% for file_name, file_datasets in datasets_by_file.items() %}
+                <h4 class="mt-4 mb-3 d-flex align-items-center justify-content-between">
+                    <span>{{ file_name }}</span>
+                    {% set model_filename = file_datasets[0].model_filename %}
+                    <a href="{{ url_for('download_synthetic', filepath=model_filename) }}"
+                        class="btn btn-outline-secondary btn-sm" target="_blank" rel="noopener noreferrer">Download Model</a>
+                </h4>
+                <div class="table-responsive mb-4 shadow-sm rounded">
+                    <table class="table table-bordered table-striped mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Synthetic Dataset File</th>
+                                <th>Date Created</th>
+                                <th>Download Dataset</th>
+                                <th>Analyze</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dataset in file_datasets %}
+                            <tr>
+                                <td>{{ dataset.synthetic_filename }}</td>
+                                <td>
+                                    {% set timestamp = None %}
+                                    {% if dataset.synthetic_filename.startswith('synthetic_') %}
+                                        {% set parts = dataset.synthetic_filename.split('_') %}
                                         {% if parts|length > 4 %}
-                                            {% set original_filename = original_filename + '.csv' %}
+                                            {% set timestamp_str = parts[-1].split('.')[0] %}
+                                            {% set timestamp = timestamp_str|int %}
                                         {% endif %}
                                     {% endif %}
-                                {% endif %}
-                                <a href="{{ url_for('analyze_dataset', filename=dataset.synthetic_filename) }}"
-                                    class="btn btn-info btn-sm">Analyze</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                                    {% if timestamp %}
+                                        {{ timestamp | datetimeformat }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('download_synthetic', filepath=dataset.synthetic_filename) }}"
+                                        class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Download
+                                        Dataset</a>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('analyze_dataset', filename=dataset.synthetic_filename) }}"
+                                        class="btn btn-info btn-sm">Analyze</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endfor %}
         {% endfor %}
     {% else %}
-    <p>No public datasets available.</p>
+    <p class="text-center mt-4">No public datasets available.</p>
     {% endif %}
 </div>
 {% endblock %}

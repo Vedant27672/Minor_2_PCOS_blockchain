@@ -77,7 +77,7 @@ def generate_synthetic_data(decrypted_file_path, username, filename, output_dir=
         # Save model to unique path with timestamp
         safe_username = "".join(c for c in username if c.isalnum() or c in (' ','.','_')).rstrip()
         safe_filename = "".join(c for c in os.path.splitext(filename)[0] if c.isalnum() or c in (' ','.','_')).rstrip()
-        model_path = os.path.join(output_dir, f"CTGAN_model_{safe_username}_{safe_filename}_{timestamp}.pkl")
+        model_path = os.path.join(output_dir, f"CTGAN_model_{safe_username}_{safe_filename}.pkl")
         with open(model_path, 'wb') as f:
             pickle.dump(ctgan, f)
         logging.info(f"✅ Model saved to {model_path}")
