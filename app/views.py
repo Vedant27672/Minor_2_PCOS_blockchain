@@ -71,25 +71,25 @@ def analyze_dataset(filename):
     Route to display analysis results for an existing synthetic dataset file.
     """
     try:
-        synthetic_file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        if not os.path.isfile(synthetic_file_path):
-            flash('Synthetic dataset file not found.', 'danger')
+        from app import public_files
+        # Query the public_files collection for the document with the given filename
+        doc = public_files.find_one({"synthetic_file_path": {"$regex": filename}})
+        if not doc or "analysis_results" not in doc:
+            flash('Analysis results not found for the specified dataset.', 'danger')
             return redirect(url_for('view_public_datasets'))
         
-        # Assuming analysis results are stored or can be generated from the synthetic file
-        # For simplicity, we will load the synthetic data and render analysis_results.html
-        import pandas as pd
-        synthetic_data = pd.read_csv(synthetic_file_path)
+        analysis_results = doc["analysis_results"]
+        synthetic_csv_path = doc.get("synthetic_file_path", filename)
         
-        # Generate analysis results (dummy or minimal for now)
-        analysis_results = {
-            'synthetic_csv_path': filename,
-            'num_rows': len(synthetic_data),
-            'num_columns': len(synthetic_data.columns),
-            # Add more analysis details as needed
-        }
-        
-        synthetic_data_html = synthetic_data.to_html(classes="table table-striped", index=False)
+        # Load synthetic data HTML if available, else load CSV and convert to HTML
+        synthetic_data_html = analysis_results.get("synthetic_data_html")
+        if not synthetic_data_html:
+            import pandas as pd
+            synthetic_file_path = synthetic_csv_path
+            if not synthetic_file_path.startswith("/"):
+                synthetic_file_path = os.path.join(app.config['UPLOAD_FOLDER'], synthetic_csv_path)
+            synthetic_data = pd.read_csv(synthetic_file_path)
+            synthetic_data_html = synthetic_data.to_html(classes="table table-striped", index=False)
         
         return render_template("analysis_results.html", analysis=analysis_results, filename=filename, synthetic_data_html=synthetic_data_html)
     except Exception as e:
@@ -297,12 +297,15 @@ def generate_dataset(filename):
                     # Get model path from model_mappings collection
                     mapping = model_mappings.find_one({"username": current_user.username, "filename": filename})
                     model_path = mapping["model_path"] if mapping and "model_path" in mapping else "CTGAN"
+                    # Add analysis_results to the document
+                    update_doc = {
+                        "model_name": model_path,
+                        "uploader_username": current_user.username,
+                        "analysis_results": analysis_results
+                    }
                     result = public_files.update_one(
                         {"synthetic_file_path": synthetic_csv_path},
-                        {"$set": {
-                            "model_name": model_path,
-                            "uploader_username": current_user.username
-                        }},
+                        {"$set": update_doc},
                         upsert=True
                     )
                     if result.upserted_id:
