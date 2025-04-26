@@ -16,6 +16,24 @@ import logging
 from app import model_mappings
 
 import time
+import os
+import pickle
+import pandas as pd
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend to avoid Tkinter errors
+import matplotlib.pyplot as plt
+import seaborn as sns
+from ctgan import CTGAN
+from scipy.stats import ks_2samp
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import QuantileTransformer
+import warnings
+import logging
+
+from app import model_mappings
+
+import time
 def generate_synthetic_data(decrypted_file_path, username, filename, output_dir="app/static/Uploads"):
     """Generate synthetic data from the decrypted file, using or training a CTGAN model mapped by username and filename."""
     data = pd.read_csv(decrypted_file_path)

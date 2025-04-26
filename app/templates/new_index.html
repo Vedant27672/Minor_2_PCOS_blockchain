@@ -1,71 +1,195 @@
-{% extends "new_base.html" %}
+{% extends "new_base.html" %} {% block content %}
 
-{% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Upload a File</h4>
-                </div>
-                <div class="card-body">
-                    <form action="/submit" method="POST" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label class="form-label">Username</label>
-                            <p class="form-control-plaintext"><strong>{{ current_user.username }}</strong></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Select File</label>
-                            <input type="file" class="form-control" name="v_file" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-upload me-2"></i>Upload
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
+<style>
+  /* Overlay for watermark effect */
+  #loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.6); /* Semi-transparent white */
+    backdrop-filter: blur(5px); /* Soft blur effect */
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+  }
 
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Your Files</h4>
-                </div>
-                <div class="card-body">
-                    {% if request_tx %}
-                    <div class="list-group">
-                        {% for post in request_tx %}
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="mb-1">{{ post.v_file }}</h5>
-                                    <small class="text-muted">Uploaded by {{ post.user }}</small>
-                                </div>
-                                <div>
-                                    <a href="{{url_for('view_block', block_index=post.index, filename=post.v_file)}}"
-                                        class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-eye"></i> View Block
-                                    </a>
-                                    <form action="{{ url_for('generate_dataset', filename=post.v_file) }}" method="post"
-                                        class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-outline-success">
-                                            <i class="bi bi-plus-circle"></i> Generate Dataset
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4">
-                        <i class="bi bi-folder-x" style="font-size: 3rem; color: #6c757d;"></i>
-                        <p class="mt-3">No files uploaded yet</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+  #loading-text {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    border-right: 2px solid #333;
+    white-space: nowrap;
+    overflow: hidden;
+    animation: blink-caret 0.75s step-end infinite;
+  }
+
+  @keyframes blink-caret {
+    50% { border-color: transparent; }
+  }
+
+  /* Custom File Upload */
+  .custom-file-upload {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    padding: 30px 20px;
+    border: 2px dashed #0d6efd;
+    border-radius: 12px;
+    background: #f8f9fa;
+    color: #0d6efd;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .custom-file-upload:hover {
+    background: #e2e6ea;
+    border-color: #0a58ca;
+    color: #0a58ca;
+  }
+
+  .custom-file-upload input[type="file"] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+</style>
+
+<!-- Watermark Loading Overlay -->
+<div id="loading-overlay">
+  <div id="loading-text"></div>
 </div>
+
+<!-- Main Content -->
+<div class="container mt-4">
+  <div class="row">
+    <!-- Upload Section -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">Upload a File</h4>
+        </div>
+        <div class="card-body">
+          <form action="/submit" method="POST" enctype="multipart/form-data">
+            <div class="mb-4">
+              <label class="form-label">Select File</label>
+              <label class="custom-file-upload">
+                <i class="bi bi-cloud-arrow-up" style="font-size: 2rem;"></i>
+                <div>Click to Choose File</div>
+                <input type="file" name="v_file" required />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="bi bi-upload me-2"></i>Upload
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Files Section -->
+    <div class="col-lg-8">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">Your Files</h4>
+        </div>
+        <div class="card-body">
+          {% if request_tx %}
+          <div class="list-group">
+            {% for post in request_tx %}
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h5 class="mb-1">{{ post.v_file }}</h5>
+                  <small class="text-muted">Uploaded by {{ post.user }}</small>
+                </div>
+                <div>
+                  <a
+                    href="{{url_for('view_block', block_index=post.index, filename=post.v_file)}}"
+                    class="btn btn-sm btn-outline-secondary"
+                  >
+                    <i class="bi bi-eye"></i> View Block
+                  </a>
+                  <form
+                    action="{{ url_for('generate_dataset', filename=post.v_file) }}"
+                    method="post"
+                    class="d-inline"
+                  >
+                    <button
+                      id="generate-btn"
+                      type="submit"
+                      class="btn btn-sm btn-outline-success"
+                    >
+                      <i class="bi bi-plus-circle"></i> Generate Dataset
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-5">
+            <i
+              class="bi bi-folder-x"
+              style="font-size: 3rem; color: #6c757d;"
+            ></i>
+            <p class="mt-3">No files uploaded yet</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Typing Animation Script -->
+<script>
+  const texts = [
+    "Generating Dataset for you...",
+    "Almost ready...",
+    "Preparing Comparative Analysis..."
+  ];
+
+  let count = 0;
+  const typingElement = document.getElementById('loading-text');
+  const loadingOverlay = document.getElementById('loading-overlay');
+
+  function typeText() {
+    typingElement.textContent = '';
+    let text = texts[count];
+    let i = 0;
+
+    function typeWriter() {
+      if (i < text.length) {
+        typingElement.textContent += text.charAt(i);
+        i++;
+        setTimeout(typeWriter, 90); // Typing speed
+      } else {
+        count = (count + 1) % texts.length;
+        setTimeout(typeText, 500); // Wait then type next text
+      }
+    }
+    typeWriter();
+  }
+
+  // Attach event listener to all Generate Dataset buttons
+  document.querySelectorAll('form[action^="/generate_dataset"]').forEach(form => {
+    form.addEventListener('submit', function (event) {
+      loadingOverlay.style.display = 'flex'; // Show watermark overlay
+      typeText();
+      // Allow natural form submission
+    });
+  });
+</script>
+
 {% endblock %}
