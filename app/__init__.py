@@ -4,8 +4,19 @@ from flask_bcrypt import Bcrypt
 from pymongo import MongoClient
 from config import Config
 
+from datetime import datetime
+from flask import Flask
+
 app = Flask(__name__, static_folder="static")
 app.config.from_object(Config)
+
+@app.template_filter('datetimeformat')
+def datetimeformat(value, format='%Y-%m-%d %H:%M:%S'):
+    """Convert a Unix timestamp to a formatted date string."""
+    try:
+        return datetime.fromtimestamp(value).strftime(format)
+    except Exception:
+        return value
 
 # Initialize extensions
 bcrypt = Bcrypt(app)
