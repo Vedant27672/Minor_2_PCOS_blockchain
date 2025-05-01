@@ -14,7 +14,7 @@ def home():
 def insert_public_file(synthetic_file_path, model_name, uploader_username):
     """
     Insert a document into the public_files collection.
-    :param synthetic_file_path: str - full path of the synthetic dataset file
+    :param synthetic_file_path: str - relative path of the synthetic dataset file including subfolder
     :param model_name: str - name of the corresponding model
     :param uploader_username: str - username of the uploader
     """
@@ -56,7 +56,19 @@ def view_public_datasets():
         public_datasets = list(public_files.find({}))
         # Prepare data for template: extract filenames from paths and get uploader username and model filename
         for dataset in public_datasets:
-            dataset['synthetic_filename'] = os.path.basename(dataset.get('synthetic_file_path', ''))
+            synthetic_path = dataset.get('synthetic_file_path', '')
+            dataset['synthetic_filename'] = os.path.basename(synthetic_path)
+            # Normalize synthetic_file_relpath to be relative path with forward slashes
+            if synthetic_path:
+                # Make relative to UPLOAD_FOLDER if absolute
+                if os.path.isabs(synthetic_path):
+                    try:
+                        synthetic_path = os.path.relpath(synthetic_path, app.config['UPLOAD_FOLDER'])
+                    except ValueError:
+                        # If relpath fails, fallback to original
+                        pass
+                synthetic_path = synthetic_path.replace("\\", "/")
+            dataset['synthetic_file_relpath'] = synthetic_path
             dataset['uploader_username'] = dataset.get('uploader_username', 'Unknown')
             dataset['model_filename'] = os.path.basename(dataset.get('model_name', ''))
     except Exception as e:
@@ -68,6 +80,9 @@ def view_public_datasets():
 
 # The rest of the file remains unchanged
 
+import urllib.parse
+import re
+
 @app.route('/analyze_dataset/<path:filename>')
 @login_required
 def analyze_dataset(filename):
@@ -76,8 +91,12 @@ def analyze_dataset(filename):
     """
     try:
         from app import public_files
+        # URL decode filename parameter
+        filename = urllib.parse.unquote(filename)
+        # Escape regex special characters in filename for safe MongoDB regex query
+        escaped_filename = re.escape(filename)
         # Query the public_files collection for the document with the given filename
-        doc = public_files.find_one({"synthetic_file_path": {"$regex": filename}})
+        doc = public_files.find_one({"synthetic_file_path": {"$regex": escaped_filename}})
         if not doc or "analysis_results" not in doc:
             flash('Analysis results not found for the specified dataset.', 'danger')
             return redirect(url_for('view_public_datasets'))
@@ -333,6 +352,8 @@ def generate_dataset(filename):
         flash('An error occurred while generating the synthetic dataset. Please try again.', 'danger')
         return redirect(url_for('upload'))
     
+import urllib.parse
+
 @app.route("/download_synthetic/<path:filepath>")
 @login_required
 def download_synthetic(filepath):
@@ -340,14 +361,22 @@ def download_synthetic(filepath):
     from flask import send_from_directory, abort
     directory = app.config['UPLOAD_FOLDER']
     try:
+        # URL decode filepath and normalize path separators
+        filepath = urllib.parse.unquote(filepath).replace("\\", "/")
         # filepath can include subdirectories, so use safe_join to prevent path traversal
         from werkzeug.utils import safe_join
         safe_path = safe_join(directory, filepath)
-        app.logger.debug(f"Requested filepath: {filepath}")
+        app.logger.debug(f"Requested filepath (decoded): {filepath}")
         app.logger.debug(f"Safe joined path: {safe_path}")
         app.logger.debug(f"File exists: {os.path.isfile(safe_path) if safe_path else 'safe_path is None'}")
         if not safe_path or not os.path.isfile(safe_path):
             app.logger.error(f"File not found for download: {filepath} in {directory}")
+            app.logger.error(f"Directory contents: {os.listdir(directory)}")
+            # Log subdirectories and their contents
+            for root, dirs, files in os.walk(directory):
+                app.logger.error(f"Root: {root}")
+                app.logger.error(f"Dirs: {dirs}")
+                app.logger.error(f"Files: {files}")
             abort(404)
         # send_from_directory requires filename relative to directory
         return send_from_directory(directory, filepath, as_attachment=True)
