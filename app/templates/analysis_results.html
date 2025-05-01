@@ -1,57 +1,146 @@
-{% extends "analysis_base.html" %}
+{% extends "analysis_base.html" %} {% block content %}
+<div class="container my-4">
+  <h1 class="mb-4">Analysis for <strong>{{ filename }}</strong></h1>
+  <hr />
 
-{% block content %}
-<div class="container">
-    <h1>Analysis Results for {{ filename }}</h1>
-    <hr />
-
-    <div class="section">
-        <h2>Summary Statistics</h2>
-        {{ analysis.summary_html | safe }}
+  <!-- Original Data Summary (scrollable) -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h2 class="h5 mb-0">Original Data Summary (Top-6 Features)</h2>
     </div>
-
-    <div class="section">
-        <h2>Kolmogorov-Smirnov Test Results</h2>
-        {{ analysis.ks_html | safe }}
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        {{ analysis.orig_summary_html | safe }}
+      </div>
     </div>
+  </div>
 
-    <div class="section">
-        <h2>Plots</h2>
-        {% for plot_path in analysis.plot_paths %}
-            {# Remove the 'app/static/' prefix from plot_path to get relative path for url_for #}
-            {% set rel_path = plot_path.replace('app/static/', '') %}
-            <img src="{{ url_for('static', filename=rel_path) }}" alt="Plot" class="plot-img" />
-        {% endfor %}
+  <!-- Synthetic Data Summary (scrollable) -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-secondary text-white">
+      <h2 class="h5 mb-0">Synthetic Data Summary (Top-6 Features)</h2>
     </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        {{ analysis.synth_summary_html | safe }}
+      </div>
+    </div>
+  </div>
 
-    <div class="section">
-        <h2>Interpretation</h2>
+  <!-- KS Test (scrollable) -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h2 class="h5 mb-0">KS Test (Top 10 Features)</h2>
+    </div>
+    <div class="card-body p-0">
+      <div>{{ analysis.ks_html | safe }}</div>
+    </div>
+  </div>
+
+  <!-- Interpretation -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h2 class="h5 mb-0">Interpretation</h2>
+    </div>
+    <div class="card-body">
+      <div class="border rounded p-3" style="background-color: #f8f9fa; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
         {{ analysis.interpretation | safe }}
+      </div>
     </div>
+  </div>
 
-    <div class="section">
-        <h2>Synthetic Dataset</h2>
-        {% if synthetic_data_html %}
-            <button id="toggleDatasetBtn" class="btn btn-info mb-3">Show Synthetic Dataset</button>
-            <div id="syntheticDataset" style="display: none;">
-                {{ synthetic_data_html | safe }}
-            </div>
-            <script>
-                const btn = document.getElementById('toggleDatasetBtn');
-                const datasetDiv = document.getElementById('syntheticDataset');
-                btn.addEventListener('click', () => {
-                    if (datasetDiv.style.display === 'none') {
-                        datasetDiv.style.display = 'block';
-                        btn.textContent = 'Hide Synthetic Dataset';
-                    } else {
-                        datasetDiv.style.display = 'none';
-                        btn.textContent = 'Show Synthetic Dataset';
-                    }
-                });
-            </script>
-        {% else %}
-            <p>No synthetic dataset available.</p>
-        {% endif %}
+  <!-- Carousel with Indicators -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h2 class="h5 mb-0">Visual Comparisons</h2>
     </div>
+    <div class="card-body">
+      <div id="plotsCarousel" class="carousel slide" data-bs-ride="carousel">
+        <!-- Indicators -->
+        <div class="carousel-indicators">
+          {% for _ in analysis.plot_infos %}
+          <button
+            type="button"
+            data-bs-target="#plotsCarousel"
+            data-bs-slide-to="{{ loop.index0 }}"
+            class="{% if loop.first %}active{% endif %}"
+            aria-current="{% if loop.first %}true{% endif %}"
+            aria-label="Slide {{ loop.index }}"
+          ></button>
+          {% endfor %}
+        </div>
+
+        <!-- Slides -->
+        <div class="carousel-inner">
+          {% for p in analysis.plot_infos %}
+          <div class="carousel-item {% if loop.first %}active{% endif %}">
+            <img
+              src="{{ url_for('static', filename=p.path) }}"
+              class="d-block mx-auto img-fluid border rounded"
+              style="max-height:450px; object-fit:contain;"
+            />
+            <div
+              class="carousel-caption d-md-block bg-dark bg-opacity-75 rounded px-3 py-2"
+              style="bottom: 10px; left: 10px; right: auto; text-align: left;"
+            >
+              <small class="text-white fw-semibold">{{ p.caption }}</small>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Controls -->
+        <button
+          class="carousel-control-prev"
+          type="button"
+          data-bs-target="#plotsCarousel"
+          data-bs-slide="prev"
+        >
+          <span
+            class="carousel-control-prev-icon bg-dark rounded-circle p-2"
+          ></span>
+          <span class="visually-hidden">Previous</span>
+        </button>
+        <button
+          class="carousel-control-next"
+          type="button"
+          data-bs-target="#plotsCarousel"
+          data-bs-slide="next"
+        >
+          <span
+            class="carousel-control-next-icon bg-dark rounded-circle p-2"
+          ></span>
+          <span class="visually-hidden">Next</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toggle Synthetic Table -->
+  <div class="mb-4 text-center">
+    <button id="toggleDatasetBtn" class="btn btn-outline-secondary">
+      View Synthetic Dataset
+    </button>
+  </div>
+  <div
+    id="syntheticDatasetTable"
+    class="table-responsive shadow-sm rounded mb-4"
+    style="display:none; max-height:400px; overflow:auto;"
+  >
+    {{ synthetic_data_html | safe }}
+  </div>
 </div>
+
+<script>
+  document.getElementById('toggleDatasetBtn').addEventListener('click', function() {
+    const tbl = document.getElementById('syntheticDatasetTable');
+    if (tbl.style.display === 'none') {
+      tbl.style.display = 'block';
+      this.textContent = 'Hide Synthetic Dataset';
+    } else {
+      tbl.style.display = 'none';
+      this.textContent = 'View Synthetic Dataset';
+    }
+  });
+</script>
 {% endblock %}
