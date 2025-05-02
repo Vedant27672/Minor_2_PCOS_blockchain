@@ -84,7 +84,7 @@ import urllib.parse
 import re
 
 @app.route('/analyze_dataset/<path:filename>')
-@login_required
+# @login_required
 def analyze_dataset(filename):
     """
     Route to display analysis results for an existing synthetic dataset file.
