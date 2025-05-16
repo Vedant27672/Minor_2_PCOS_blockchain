@@ -116,9 +116,9 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{{ url_for('download_synthetic', filepath=dataset.synthetic_filename) }}"
-                            class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Download
-                            Dataset</a>
+<a href="{{ url_for('download_synthetic', filepath=dataset.synthetic_file_relpath) }}"
+    class="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">Download
+    Dataset</a>
                     </td>
                     <td>
                         <a href="{{ url_for('analyze_dataset', filename=dataset.synthetic_file_relpath) }}"
