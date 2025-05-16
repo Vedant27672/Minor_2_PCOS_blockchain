@@ -34,6 +34,13 @@ from flask_login import login_required
 @app.route('/upload')
 @login_required
 def upload():
+    """
+    This is a Flask route decorator that maps the URL path '/upload' to the upload() function.
+    When a user visits '/upload', this function is called to handle the request.
+    The @login_required decorator ensures that only authenticated users can access this route.
+    The function fetches transaction requests, filters them based on ownership and authentication,
+    and then renders the 'new_index.html' template with relevant data.
+    """
     get_tx_req()
     # Show anonymous files to all, private files only to owner/master
     filtered_tx = [tx for tx in request_tx 
