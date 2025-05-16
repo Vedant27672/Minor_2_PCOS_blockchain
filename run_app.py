@@ -1,9 +1,14 @@
 import sys
 import os
-
-# Add the current directory to the Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from app import app
 
-app.run(host = 'localhost', port = '9000',debug=True)
+def main():
+    # Ensure the current directory is in the Python path
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if current_dir not in sys.path:
+        sys.path.append(current_dir)
+
+    app.run(host='localhost', port=9000, debug=True)
+
+if __name__ == "__main__":
+    main()

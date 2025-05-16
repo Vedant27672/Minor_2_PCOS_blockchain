@@ -1,4 +1,4 @@
-# file to compare two different Proof of work algorithms implemented in the Main source code for blockchain
+# file to compare two different Proof of Work algorithms implemented in the Main source code for blockchain
 # first algorithm generates nonce using random function
 # second algorithm simply increments nonce by 1 after each iteration of generating valid hash value
 
@@ -9,85 +9,71 @@ import random
 import string
 import threading
 
-pow_run = [] # to store running time of pow algorithm with various difficulty levels
-pow2_run = [] # to store running time of pow2 algorithm with various difficulty levels
+def random_char(length):
+    """Generate a random string of given length."""
+    return ''.join(random.choice(string.ascii_letters) for _ in range(length))
 
+def add_transaction(block, transactions_length):
+    """Add random transactions to the block."""
+    for _ in range(transactions_length):
+        if random.random() > 0.9:
+            t = {
+                "user": random_char(random.randint(0, 20)),
+                "v_file": random_char(random.randint(0, 20)),
+                "file_data": random_char(random.randint(0, 200)),
+                "file_size": random.randint(0, 1000)
+            }
+            block.add_t(t)
 
-# generates random string
-def random_char(y):
-    return ''. join(random. choice(string. ascii_letters) for x in range(y))
+def run_pow_comparison():
+    pow_run = []
+    pow2_run = []
 
+    for difficulty in range(2, 6):
+        block_index = random.randint(0, 2000)
+        transactions_length = random.randint(10, 20)
+        transactions = []
 
-# this is method add transactions to the block on the fly make it more realistic
-def add_transaction(block):
+        # Create random block
+        block = Block(block_index, transactions, "0")
+        chain = Blockchain()
+        Blockchain.difficulty = difficulty
 
-   global transactions_length
-   global transactions
-   
-   for i in range(transactions_length):
-    
-    
-    if(random.random() > 0.9):
-    
-            
-        name = random_char(random.randint(0,20))
-        file_name = random_char(random.randint(0,20))
-        file_data = random_char(random.randint(0,200))
-        
-        t = {
+        # Thread to add transactions on the fly
+        tx_thread = threading.Thread(target=add_transaction, args=(block, transactions_length))
+        tx_thread.start()
 
-            "user" : name,
-            "v_file" : file_name,
-            "file_data" : file_data,
-            "file_size" : random.randint(0,1000) 
-        } 
+        # Proof of Work (random nonce)
+        start = timer()
+        print(chain.p_o_w(block))
+        end = timer()
+        print(end - start)
+        pow_run.append(end - start)
 
-        block.add_t(t)
-# run pow algorithms  with difficulty from 2 to 5
-for j in range(2,6):
+        # Proof of Work 2 (iterative nonce)
+        start = timer()
+        print(chain.p_o_w_2(block))
+        end = timer()
+        print(end - start)
+        pow2_run.append(end - start)
 
-    block_index = random.randint(0,2000)
-    transactions_length = random.randint(10,20)
-    transactions = []
+        tx_thread.join()
 
-    # creates random block      
-    b = Block(block_index,transactions,"0")
-    chain = Blockchain()
-    Blockchain.difficulty = j
-    
-    # thread to add transactions on the fly    
-    new_thread = threading.Thread(target=add_transaction, args= (b,))
-    new_thread.start()
+    print("------------Proof of Work with Random Nonce ------------")
+    for idx, t in enumerate(pow_run, start=2):
+        print(f"Difficulty {idx} Time : {round(t, 5)}")
 
-    # calculating running time for POW algorithm     
-    start = timer()
-    print(chain.p_o_w(b))
-    end = timer()
-    print(end-start)
-    pow_run.insert(j, end-start)
+    print("------------Proof of Work with Iterative Nonce ------------")
+    for idx, t in enumerate(pow2_run, start=2):
+        print(f"Difficulty {idx} Time : {round(t, 5)}")
 
-    # calculating running time for POW2 algorithm     
-    start = timer()
-    print(chain.p_o_w_2(b))
-    end = timer()
-    print(end-start)
-    pow2_run.insert(j, end-start)
+    print("------------Proof of Work with Random Nonce ------------")
+    for t in pow_run:
+        print(round(t, 5))
 
+    print("------------Proof of Work with Iterative Nonce ------------")
+    for t in pow2_run:
+        print(round(t, 5))
 
-print("------------Proof of Work with Random Nounce ------------")
-for a in pow_run:
-    print("Difficulty ", pow_run.index(a) + 2, " Time : ", round(a,5))
-
-print("------------Proof of Work with Iterative Nounce ------------")
-for a in pow2_run:
-    print("Difficulty ", pow2_run.index(a) + 2, " Time : ", round(a,5))
-
-print("------------Proof of Work with Random Nounce ------------")
-for a in pow_run:
-    print(round(a,5))
-
-print("------------Proof of Work with Iterative Nounce ------------")
-for a in pow2_run:
-    print(round(a,5))
-
-
+if __name__ == "__main__":
+    run_pow_comparison()

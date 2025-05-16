@@ -43,7 +43,8 @@
       <h2 class="h5 mb-0">Interpretation</h2>
     </div>
     <div class="card-body">
-      <div class="border rounded p-3" style="background-color: #f8f9fa; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
+      <div class="border rounded p-3"
+        style="background-color: #f8f9fa; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
         {{ analysis.interpretation | safe }}
       </div>
     </div>
@@ -59,14 +60,9 @@
         <!-- Indicators -->
         <div class="carousel-indicators">
           {% for _ in analysis.plot_infos %}
-          <button
-            type="button"
-            data-bs-target="#plotsCarousel"
-            data-bs-slide-to="{{ loop.index0 }}"
-            class="{% if loop.first %}active{% endif %}"
-            aria-current="{% if loop.first %}true{% endif %}"
-            aria-label="Slide {{ loop.index }}"
-          ></button>
+          <button type="button" data-bs-target="#plotsCarousel" data-bs-slide-to="{{ loop.index0 }}"
+            class="{% if loop.first %}active{% endif %}" aria-current="{% if loop.first %}true{% endif %}"
+            aria-label="Slide {{ loop.index }}"></button>
           {% endfor %}
         </div>
 
@@ -74,15 +70,10 @@
         <div class="carousel-inner">
           {% for p in analysis.plot_infos %}
           <div class="carousel-item {% if loop.first %}active{% endif %}">
-            <img
-              src="{{ url_for('static', filename=p.path) }}"
-              class="d-block mx-auto img-fluid border rounded"
-              style="max-height:450px; object-fit:contain;"
-            />
-            <div
-              class="carousel-caption d-md-block bg-dark bg-opacity-75 rounded px-3 py-2"
-              style="bottom: 10px; left: 10px; right: auto; text-align: left;"
-            >
+            <img src="{{ url_for('static', filename=p.path) }}" class="d-block mx-auto img-fluid border rounded"
+              style="max-height:450px; object-fit:contain;" />
+            <div class="carousel-caption d-md-block bg-dark bg-opacity-75 rounded px-3 py-2"
+              style="bottom: 10px; left: 10px; right: auto; text-align: left;">
               <small class="text-white fw-semibold">{{ p.caption }}</small>
             </div>
           </div>
@@ -90,26 +81,12 @@
         </div>
 
         <!-- Controls -->
-        <button
-          class="carousel-control-prev"
-          type="button"
-          data-bs-target="#plotsCarousel"
-          data-bs-slide="prev"
-        >
-          <span
-            class="carousel-control-prev-icon bg-dark rounded-circle p-2"
-          ></span>
+        <button class="carousel-control-prev" type="button" data-bs-target="#plotsCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon bg-dark rounded-circle p-2"></span>
           <span class="visually-hidden">Previous</span>
         </button>
-        <button
-          class="carousel-control-next"
-          type="button"
-          data-bs-target="#plotsCarousel"
-          data-bs-slide="next"
-        >
-          <span
-            class="carousel-control-next-icon bg-dark rounded-circle p-2"
-          ></span>
+        <button class="carousel-control-next" type="button" data-bs-target="#plotsCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon bg-dark rounded-circle p-2"></span>
           <span class="visually-hidden">Next</span>
         </button>
       </div>
@@ -122,17 +99,14 @@
       View Synthetic Dataset
     </button>
   </div>
-  <div
-    id="syntheticDatasetTable"
-    class="table-responsive shadow-sm rounded mb-4"
-    style="display:none; max-height:400px; overflow:auto;"
-  >
+  <div id="syntheticDatasetTable" class="table-responsive shadow-sm rounded mb-4"
+    style="display:none; max-height:400px; overflow:auto;">
     {{ synthetic_data_html | safe }}
   </div>
 </div>
 
 <script>
-  document.getElementById('toggleDatasetBtn').addEventListener('click', function() {
+  document.getElementById('toggleDatasetBtn').addEventListener('click', function () {
     const tbl = document.getElementById('syntheticDatasetTable');
     if (tbl.style.display === 'none') {
       tbl.style.display = 'block';
